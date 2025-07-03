@@ -7,19 +7,6 @@
 
 import Foundation
 
-struct Camera: Codable, Identifiable, CustomStringConvertible {
-    static let urlSuffix = "cameras"
-    let name: String
-    let id: String
-    
-    var description : String {
-        return "\(name) [\(id)]"
-    }
-    
-    static func parse(_ data: Data) throws -> [Self] {
-        try JSONDecoder().decode([Self].self, from: data)
-    }
-}
 
 enum MIMEType: String {
     case json = "application/json"
@@ -33,6 +20,9 @@ struct ProtectService {
         URL(string: "http://\(host)/proxy/protect/integration/v1")!
     }
     var _cameras: [Camera]? = nil     // cache the camera values
+    var _liveviews: [Liveview]? = nil     // cache the liveview values
+    var _viewports: [Viewport]? = nil     // cache the viewport values
+
     // TODO: save a timestamp and check if it's been "too long" since the last GET
     //       Not really an issue for camview, which does one thing and quits, but
     //       if we add a REPL or use this in a long term app, might need a refresh.
@@ -45,6 +35,26 @@ struct ProtectService {
         let cameras = try Camera.parse(try await fetchData(for: Camera.urlSuffix, accepting: .json))
         _cameras = cameras
         return cameras
+    }
+    
+    mutating func liveviews() async throws -> [Liveview] {
+        if let cached = _liveviews {
+            return cached
+        }
+        
+        let liveviews = try Liveview.parse(try await fetchData(for: Liveview.urlSuffix, accepting: .json))
+        _liveviews = liveviews
+        return liveviews
+    }
+
+    mutating func viewports() async throws -> [Viewport] {
+        if let cached = _viewports {
+            return cached
+        }
+        
+        let viewports = try Viewport.parse(try await fetchData(for: Viewport.urlSuffix, accepting: .json))
+        _viewports = viewports
+        return viewports
     }
     
     func fetchData(for path: String, accepting mimetype: MIMEType = .json) async throws -> Data {
@@ -82,5 +92,12 @@ struct WebDataApp {
         var ps = ProtectService()
         let cams = try? await ps.cameras()
         dump(cams)
+        
+        let liveviews = try? await ps.liveviews()
+        dump(liveviews)
+
+        let viewports = try? await ps.viewports()
+        dump(viewports)
+
     }
 }
