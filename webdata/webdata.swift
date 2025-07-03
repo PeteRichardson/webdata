@@ -21,6 +21,11 @@ struct Camera: Codable, Identifiable, CustomStringConvertible {
     }
 }
 
+enum MIMEType: String {
+    case json = "application/json"
+    case jpeg = "application/jpeg"
+}
+
 
 struct ProtectService {
     let host = "udm.local"
@@ -37,17 +42,17 @@ struct ProtectService {
             return cached
         }
         
-        let cameras = try Camera.parse(try await fetchData(for: Camera.urlSuffix, accepting: "application/json"))
+        let cameras = try Camera.parse(try await fetchData(for: Camera.urlSuffix, accepting: .json))
         _cameras = cameras
         return cameras
     }
     
-    func fetchData(for path: String, accepting mimetype: String = "*/*") async throws -> Data {
-        let url = base_url.appendingPathComponent(Camera.urlSuffix)
+    func fetchData(for path: String, accepting mimetype: MIMEType = .json) async throws -> Data {
+        let url = base_url.appendingPathComponent(path)
         var request = URLRequest(url: url)
         let apiKey = try Keychain.LoadApiKey()
         request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
-        request.setValue("accepts", forHTTPHeaderField: mimetype)
+        request.setValue(mimetype.rawValue, forHTTPHeaderField: "accepts")
         
         let (data, response) = try await URLSession.shared.data(for: request)
         try validateResponse(response)
