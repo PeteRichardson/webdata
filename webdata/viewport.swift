@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Viewport: ProtectServiceObject {    
+struct Viewport: ProtectFetchable {    
     static let urlSuffix = "viewers"
     let name: String
     let id: String

@@ -12,7 +12,7 @@ import Foundation
 @main
 struct WebDataApp {
     static func main() async throws {
-        var protect = ProtectService()
+        let protect = ProtectService()
 
         let cams = try await protect.cameras()
         dump(cams)

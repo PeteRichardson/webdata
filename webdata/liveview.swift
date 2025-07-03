@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Liveview: ProtectServiceObject {
+struct Liveview: ProtectFetchable {
     static let urlSuffix = "liveviews"
     
     let name: String

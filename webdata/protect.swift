@@ -14,43 +14,34 @@ enum MIMEType: String {
 }
 
 
-struct ProtectService {
+class ProtectService {
     let host = "udm.local"
     var base_url: URL {
         URL(string: "http://\(host)/proxy/protect/integration/v1")!
     }
-    var _cameras: [Camera]? = nil         // cache the camera values
-    var _liveviews: [Liveview]? = nil     // cache the liveview values
-    var _viewports: [Viewport]? = nil     // cache the viewport values
+    private var cachedCameras: [Camera]? = nil         // cache the camera values
+    private var cachedLiveviews: [Liveview]? = nil     // cache the liveview values
+    private var cachedViewports: [Viewport]? = nil     // cache the viewport values
     
-    mutating func cameras() async throws -> [Camera] {
-        if let cached = _cameras {
-            return cached
-        }
-        
-        let cameras = try Camera.parse(try await fetchData(for: Camera.urlSuffix, accepting: .json))
-        _cameras = cameras
-        return cameras
-    }
-    
-    mutating func liveviews() async throws -> [Liveview] {
-        if let cached = _liveviews {
-            return cached
-        }
-        
-        let liveviews = try Liveview.parse(try await fetchData(for: Liveview.urlSuffix, accepting: .json))
-        _liveviews = liveviews
-        return liveviews
+    func cameras() async throws -> [Camera] {
+        try await fetchAndCache(cache: &cachedCameras)
     }
 
-    mutating func viewports() async throws -> [Viewport] {
-        if let cached = _viewports {
+    func liveviews() async throws -> [Liveview] {
+        try await fetchAndCache(cache: &cachedLiveviews)
+    }
+
+    func viewports() async throws -> [Viewport] {
+        try await fetchAndCache(cache: &cachedViewports)
+    }
+    
+    private func fetchAndCache<T: ProtectFetchable>(cache: inout [T]?) async throws -> [T] {
+        if let cached = cache {
             return cached
         }
-        
-        let viewports = try Viewport.parse(try await fetchData(for: Viewport.urlSuffix, accepting: .json))
-        _viewports = viewports
-        return viewports
+        let data = try await fetchData(for: T.urlSuffix, accepting: .json)
+        cache = try T.parse(data)
+        return cache!
     }
     
     func fetchData(for path: String, accepting mimetype: MIMEType = .json) async throws -> Data {

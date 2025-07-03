@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Camera: ProtectServiceObject {
+struct Camera: ProtectFetchable {
     static let urlSuffix = "cameras"
     let name: String
     let id: String

@@ -7,13 +7,13 @@
 
 import Foundation
 
-protocol ProtectServiceObject: Codable, Identifiable, CustomStringConvertible, Equatable {
+protocol ProtectFetchable: Codable, Identifiable, CustomStringConvertible, Equatable {
     static var urlSuffix : String  { get }
     var description : String { get }
     var name: String { get }
 }
 
-extension ProtectServiceObject {
+extension ProtectFetchable {
     static func parse(_ data: Data) throws -> [Self] {
         try JSONDecoder().decode([Self].self, from: data)
     }
