@@ -7,17 +7,8 @@
 
 import Foundation
 
-struct Camera: Codable, Identifiable, CustomStringConvertible {
+struct Camera: ProtectServiceObject {
     static let urlSuffix = "cameras"
     let name: String
     let id: String
-    
-    var description : String {
-        return "\(name) [\(id)]"
-    }
-    
-    // not specific to camera.  maybe extract to a protocol
-    static func parse(_ data: Data) throws -> [Self] {
-        try JSONDecoder().decode([Self].self, from: data)
-    }
 }
