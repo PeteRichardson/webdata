@@ -8,7 +8,7 @@
 import Foundation
 
 struct Camera: Codable, Identifiable, CustomStringConvertible {
-    static let cameraURLSuffix = "cameras"
+    static let urlSuffix = "cameras"
     let name: String
     let id: String
     
@@ -16,12 +16,10 @@ struct Camera: Codable, Identifiable, CustomStringConvertible {
         return "\(name) [\(id)]"
     }
     
-    static func parse(_ jsonData: Data) throws -> [Self] {
-        try JSONDecoder().decode([Self].self, from: jsonData)
+    static func parse(_ data: Data) throws -> [Self] {
+        try JSONDecoder().decode([Self].self, from: data)
     }
 }
-
-
 
 
 struct ProtectService {
@@ -29,22 +27,26 @@ struct ProtectService {
     var base_url: URL {
         URL(string: "http://\(host)/proxy/protect/integration/v1")!
     }
-    var _cameras: [Camera]? = nil
+    var _cameras: [Camera]? = nil     // cache the camera values
+    // TODO: save a timestamp and check if it's been "too long" since the last GET
+    //       Not really an issue for camview, which does one thing and quits, but
+    //       if we add a REPL or use this in a long term app, might need a refresh.
     
     mutating func cameras() async throws -> [Camera] {
         if let cached = _cameras {
             return cached
         }
         
-        let cameras = try Camera.parse(try await fetchData(for: Camera.cameraURLSuffix, accepting: "application/json"))
+        let cameras = try Camera.parse(try await fetchData(for: Camera.urlSuffix, accepting: "application/json"))
         _cameras = cameras
         return cameras
     }
     
     func fetchData(for path: String, accepting mimetype: String = "*/*") async throws -> Data {
-        let url = base_url.appendingPathComponent(Camera.cameraURLSuffix)
+        let url = base_url.appendingPathComponent(Camera.urlSuffix)
         var request = URLRequest(url: url)
-        request.setValue("XXXXXXXXXXXXXXXXXXXX", forHTTPHeaderField: "X-API-KEY")
+        let apiKey = try Keychain.LoadApiKey()
+        request.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
         request.setValue("accepts", forHTTPHeaderField: mimetype)
         
         let (data, response) = try await URLSession.shared.data(for: request)
